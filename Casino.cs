@@ -8,45 +8,92 @@ namespace Cards
         static void Main(string[] args)
         {
             Casino casino = new Casino();
-            casino.StartWork();
+            casino.Work();
         }
     }
 }
 
-class Card
+class Casino
 {
-    public Card(string suit, string meaning)
+    Player player = new Player();
+    Croupier croupier = new Croupier();
+    bool isWorking = true;
+
+    public void Work()
     {
-        Suit = suit;
-        Meaning = meaning;
-    }
+        const int OptionGetCards = 1;
+        const int OptionShowCards = 2;
+        const int OptionExit = 3;
+        const int OptionShowRemainingCards = 4;
+        const int OptionMixCards = 5;
 
-    public string Suit { get; private set; }
+        Console.WriteLine("Приветствую!");
 
-    public string Meaning { get; private set; }
-}
-
-class Deck
-{
-    private string[] _suits = { "черви", "пики", "кресте", "бубы" };
-    private string[] _meanings = { "6", "7", "8", "9", "10", "валет", "дама", "король", "туз" };
-    public List<Card> Cards { private set; get; }
-
-    public Deck()
-    {
-        Cards = new List<Card>();
-        CreateCards();
-    }
-
-    public void CreateCards()
-    {
-        for (int i = 0; i < _suits.Length; i++)
+        while (isWorking)
         {
-            for (int j = 0; j < _meanings.Length; j++)
+            Console.WriteLine("Выберите действие: \n" +
+                $"{OptionGetCards} - взять карту;\n" +
+                $"{OptionShowCards} - вскрыть карты(показать)\n" +
+                $"{OptionExit} - выйти;\n" +
+                $"{OptionShowRemainingCards} - показать оставшиеся карты;\n" +
+                $"{OptionMixCards} - перемешать колоду;");
+
+            switch (GetNumber())
             {
-                Cards.Add(new Card(_suits[i], _meanings[j]));
+                case OptionGetCards:
+                    TransferCardToPlayer();
+                    break;
+
+                case OptionShowCards:
+                    player.ShowCards();
+                    break;
+
+                case OptionExit:
+                    isWorking = false;
+                    break;
+
+                case OptionShowRemainingCards:
+                    croupier.ShowCards();
+                    break;
+
+                case OptionMixCards:
+                    croupier.Shuffle();
+                    break;
+
+                default:
+                    Console.WriteLine("Вы ввели некоректное значение!");
+                    break;
             }
+
+            Console.Write("Нажмите любую клавишу для продолжения.");
+            Console.ReadKey();
+            Console.Clear();
+            Console.WriteLine();
         }
+    }
+
+    private void TransferCardToPlayer()
+    {
+        Card newCard = croupier.GiveCard();
+
+        if (newCard != null)
+            player.AddCard(newCard);
+    }
+
+    private int GetNumber()
+    {
+        int result = 0;
+        bool isWorking = true;
+
+        while (isWorking)
+        {
+            if (int.TryParse(Console.ReadLine(), out result))
+                isWorking = false;
+            else
+                Console.WriteLine("Вы ввели некоректное чтсло! Попробуйте еще раз.");
+        }
+
+        return result;
     }
 }
 
@@ -73,27 +120,28 @@ class Player
 
 class Croupier
 {
-    private Deck _deck;
+    private Deck _deck = new Deck();
+    private List<Card> _cards;
     private ShuffleMachine _shuffleMachine = new ShuffleMachine();
 
     public Croupier()
     {
-        _deck = new Deck();
+        _cards = _deck.CreateCards();
     }
 
     public void Shuffle()
     {
-        _shuffleMachine.MixCards(_deck);
+        _shuffleMachine.MixCards(_cards);
     }
 
     public Card GiveCard()
     {
-        int countCards = _deck.Cards.Count;
+        int countCards = _cards.Count;
 
         if (countCards > 0)
         {
-            Card newCard = _deck.Cards[0];
-            _deck.Cards.RemoveAt(0);
+            Card newCard = _cards[0];
+            _cards.RemoveAt(0);
             return newCard;
         }
         else
@@ -105,18 +153,17 @@ class Croupier
 
     public void ShowCards()
     {
-        foreach (Card card in _deck.Cards)
+        foreach (Card card in _cards)
             Console.Write(card.Suit + " " + card.Meaning);
     }
 }
 
 class ShuffleMachine
 {
-    public List<Card> MixCards(Deck deck)
+    public List<Card> MixCards(List<Card> cards)
     {
         Random random = new Random();
         Card buferCard;
-        List<Card> cards = deck.Cards;
         int countCards = cards.Count;
 
         for (int i = 0; i < countCards; i++)
@@ -131,87 +178,36 @@ class ShuffleMachine
     }
 }
 
-class Casino
+class Deck
 {
-    bool isWorking = true;
-    Player player = new Player();
-    Croupier croupier = new Croupier();
-    ShuffleMachine mixingMachine = new ShuffleMachine();
+    private string[] _suits = { "черви", "пики", "кресте", "бубы" };
+    private string[] _meanings = { "6", "7", "8", "9", "10", "валет", "дама", "король", "туз" };
 
-    public void StartWork()
+    public List<Card> CreateCards()
     {
-        const int OPTION_GET_CARD = 1;
-        const int OPTION_SHOW_CARDS = 2;
-        const int OPTION_EXIT = 3;
-        const int OPTION_SHOW_REMAINING_CARDS = 4;
-        const int OPTION_MIX_CARDS = 5;
+        List<Card> Cards = new List<Card>();
 
-        Console.WriteLine("Приветствую!");
-
-        while (isWorking)
+        for (int i = 0; i < _suits.Length; i++)
         {
-            Console.WriteLine("Выберите действие: \n" +
-                $"{OPTION_GET_CARD} - взять карту;\n" +
-                $"{OPTION_SHOW_CARDS} - вскрыть карты(показать)\n" +
-                $"{OPTION_EXIT} - выйти;\n" +
-                $"{OPTION_SHOW_REMAINING_CARDS} - показать оставшиеся карты;\n" +
-                $"{OPTION_MIX_CARDS} - перемешать колоду;");
-
-            switch (GetNumber())
+            for (int j = 0; j < _meanings.Length; j++)
             {
-                case OPTION_GET_CARD:
-                    TransferTheCardToThePlayer();
-                    break;
-
-                case OPTION_SHOW_CARDS:
-                    player.ShowCards();
-                    break;
-
-                case OPTION_EXIT:
-                    isWorking = false;
-                    break;
-
-                case OPTION_SHOW_REMAINING_CARDS:
-                    croupier.ShowCards();
-                    break;
-
-                case OPTION_MIX_CARDS:
-                    croupier.Shuffle();
-                    break;
-
-                default:
-                    Console.WriteLine("Вы ввели некоректное значение!");
-                    break;
+                Cards.Add(new Card(_suits[i], _meanings[j]));
             }
-
-            Console.Write("Нажмите любую клавишу для продолжения.");
-            Console.ReadKey();
-            Console.Clear();
-            Console.WriteLine();
-        }
-    }
-
-    private void TransferTheCardToThePlayer()
-    {
-        var newCard = croupier.GiveCard();
-        if (newCard != null)
-            player.AddCard(newCard);
-    }
-
-
-    private int GetNumber()
-    {
-        int result = 0;
-        bool isWorking = true;
-
-        while (isWorking)
-        {
-            if (int.TryParse(Console.ReadLine(), out result))
-                isWorking = false;
-            else
-                Console.WriteLine("Вы ввели некоректное чтсло! Попробуйте еще раз.");
         }
 
-        return result;
+        return Cards;
     }
+}
+
+class Card
+{
+    public Card(string suit, string meaning)
+    {
+        Suit = suit;
+        Meaning = meaning;
+    }
+
+    public string Suit { get; private set; }
+
+    public string Meaning { get; private set; }
 }
